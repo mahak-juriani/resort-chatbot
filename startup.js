@@ -1,7 +1,28 @@
 const express = require('express')
 const sqlite3 = require('sqlite3')
+
+const db = require('./db/db.js')
+const productRoutes = require('./routes/products.js')
+
+
 const app = express()
 const port = 3000
+
+// Sync the model with the database
+db.sync().then(() => {
+    console.log('Database synchronized');
+  });
+
+app.use(express.json());
+
+// Use product routes
+app.use(productRoutes);
+  
+
+app.get('/run', (req, res) => {
+
+})
+
 
 app.get('/', (req, res) => {
 

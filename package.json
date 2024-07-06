@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sequelize/sqlite3": "^7.0.0-alpha.41",
     "express": "^4.19.2",
     "sqlite3": "^5.1.7"
   }
