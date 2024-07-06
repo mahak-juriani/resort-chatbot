@@ -3,6 +3,8 @@ const sqlite3 = require('sqlite3')
 
 const db = require('./db/db.js')
 const productRoutes = require('./routes/products.js')
+const roomRoutes = require('./routes/rooms.js')
+const bookingRoutes = require('./routes/bookings.js')
 
 
 const app = express()
@@ -17,7 +19,10 @@ app.use(express.json());
 
 // Use product routes
 app.use(productRoutes);
-  
+// Use room routes
+app.use(roomRoutes);
+// Use booking routes
+app.use(bookingRoutes);
 
 app.get('/run', (req, res) => {
 
