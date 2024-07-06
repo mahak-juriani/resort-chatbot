@@ -20,9 +20,9 @@ exports.createBooking = async (req, res) => {
     }
     // Add in a transaction
     try{
-      // Get Room by id to check if available - provide booking
+      // TODO: Get Room by id to check if available - provide booking
       const room = await Booking.create({ roomId, fullName, nights, email });
-      // Make the room available = false
+      // TODO: Make the room available = false
     }catch(error){
       console.log("Booking Failed");
       console.log(error);
