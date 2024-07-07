@@ -1,13 +1,11 @@
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 
 // Initialize OpenAI configuration
-const configuration = new Configuration({
+const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
   
 
-// Initialize OpenAI API client
-const openai = new OpenAIApi(configuration);
 
 // Function to get chat completion from OpenAI
 const getOpenAIChatCompletion = async (messages) => {
