@@ -27,9 +27,6 @@ exports.getAllRooms = async (req, res) => {
 
     // Process the response and update the local database
     const rooms = response.data;
-    for (const room of rooms) {
-      await Room.upsert({ id: room.id, price: room.price, isAvailable: room.isAvailable });
-    }
 
     // Send the response back to the client
     res.json(rooms);

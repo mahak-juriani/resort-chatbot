@@ -206,7 +206,7 @@ exports.chat = async (req,res) => {
     // }
 
 
-    if (isBookingARoom.content.toLowerCase().includes("yes") && isFullNameProvided.content.toLowerCase().includes("yes") && isNightsToStayProvided.content.toLowerCase().includes("yes")) {
+    if (isBookingARoom.content.toLowerCase().includes("yes") && isFullNameProvided.content.toLowerCase().includes("yes") && isNightsToStayProvided.content.toLowerCase().includes("yes") && isRoomNumberProvided.content.toLowerCase().includes("yes")) {
         const fullName = (await getOpenAIChatCompletion([...messages, { role: "system", content: query }, { role: "user", content: "Please respond with full name" }])).content;
         const email = (await getOpenAIChatCompletion([...messages, { role: "system", content: query }, { role: "user", content: "Please respond with email" }])).content;
         const roomId = (await getOpenAIChatCompletion([...messages, { role: "system", content: query }, { role: "user", content: "Please respond with room ID" }])).content;
@@ -248,5 +248,5 @@ exports.chat = async (req,res) => {
 
     chatCompletion.conversationId = conversationId;
 
-    res.json({ message: 'Chat created successfully', chatCompletion });
+    res.json({messages: "hi", chatCompletion });
 }

@@ -49,6 +49,7 @@ exports.createBooking = async (req, res) => {
       nights
     });
 
+    console.log(req.body.roomId);
 
     res.json({ message: 'Booking created successfully', booking, externalResponse: response.data });
   } catch (error) {
