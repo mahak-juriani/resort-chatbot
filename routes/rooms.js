@@ -9,11 +9,11 @@ const {
 
 const router = express.Router();
 
-router.route("/rooms")
+// router.route("/rooms")
     // Get all rooms
-    .get(getAllRooms)
+    // .get(getAllRooms)
     // Create a new room
-    .post(createRoom);
+    // .post(createRoom);
 // router.route("/rooms/:id")
 // //     // Get a room by id
 //     .get(getRoomById)
@@ -22,4 +22,9 @@ router.route("/rooms")
 // //     // Delete a room by id
 //     .delete(deleteRoomById)
 // Export the router
+
+router.get('/rooms', getAllRooms); // Example GET route
+router.post('/rooms', createRoom); // Example POST route
+
+
 module.exports = router;

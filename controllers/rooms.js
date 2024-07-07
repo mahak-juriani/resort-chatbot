@@ -1,3 +1,4 @@
+const axios = require('axios');
 const Room = require('../db/models/rooms');
 
 // for creating a new room
@@ -21,9 +22,16 @@ exports.createRoom = async (req, res) => {
 // getting all rooms
 exports.getAllRooms = async (req, res) => {
   try {
-    const rooms = await Room.findAll({
-      attributes: ['id', 'price', 'isAvailable']
-  });
+    // Fetch rooms from the external API
+    const response = await axios.get('https://bot9assignement.deno.dev/rooms');
+
+    // Process the response and update the local database
+    const rooms = response.data;
+    for (const room of rooms) {
+      await Room.upsert({ id: room.id, price: room.price, isAvailable: room.isAvailable });
+    }
+
+    // Send the response back to the client
     res.json(rooms);
   } catch (error) {
     console.error(error);

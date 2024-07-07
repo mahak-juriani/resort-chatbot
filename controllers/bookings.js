@@ -1,3 +1,4 @@
+const axios = require('axios');
 const Booking = require('../db/models/bookings');
 const Room = require('../db/models/rooms');
 
@@ -11,7 +12,8 @@ const validateEmail = (email) => {
 };
 
 // for creating a new room
-// Controller for creating a new room
+
+// Controller for creating a new Booking
 exports.createBooking = async (req, res) => {
   try {
     const { roomId, fullName, nights, email } = req.body;
@@ -39,8 +41,16 @@ exports.createBooking = async (req, res) => {
       where: { id: roomId } 
     })
 
-    res.json({ message: 'Booking created successfully', booking });
-    
+    // Call the external API to create the booking
+    const response = await axios.post('https://bot9assignement.deno.dev/book', {
+      roomId,
+      fullName,
+      email,
+      nights
+    });
+
+
+    res.json({ message: 'Booking created successfully', booking, externalResponse: response.data });
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');

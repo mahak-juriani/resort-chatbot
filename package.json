@@ -1,10 +1,12 @@
 {
   "dependencies": {
     "@sequelize/sqlite3": "^7.0.0-alpha.41",
+    "axios": "^1.7.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "groq-sdk": "^0.5.0",
     "nodemon": "^3.1.4",
+    "openai": "^4.52.3",
     "uuid": "^10.0.0"
   }
 }
