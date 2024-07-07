@@ -25,8 +25,5 @@ const Booking = sequelize.define('Booking', {
   }
 });
 
-// Booking.hasOne(Room);
-// Room.belongsTo(Booking);
-
 // Export the Booking model
 module.exports = Booking;

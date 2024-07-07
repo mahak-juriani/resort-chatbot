@@ -6,7 +6,7 @@ exports.createRoom = async (req, res) => {
   try {
 
     const { price, isAvailable } = req.body;
-    // TODO: input validation
+    // input validation
     if(!isAvailable || !price){
       res.status(400).send('Availability and pricing value are required')
     }
@@ -53,7 +53,6 @@ exports.updateRoomById = async (req, res) => {
   try {
     const roomId = req.params.id;
     const { price, isAvailable } = req.body;
-    // TODO: input validation
 
     const room = await Room.findByPk(roomId);
     if (!room) {

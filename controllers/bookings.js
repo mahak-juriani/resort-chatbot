@@ -1,4 +1,5 @@
 const Booking = require('../db/models/bookings');
+const Room = require('../db/models/rooms');
 
 
 const validateEmail = (email) => {
@@ -18,18 +19,28 @@ exports.createBooking = async (req, res) => {
     if(email && !validateEmail(email)){
       res.status(400).send('Invalid Email');      
     }
-    // Add in a transaction
-    try{
-      // TODO: Get Room by id to check if available - provide booking
-      const room = await Booking.create({ roomId, fullName, nights, email });
-      // TODO: Make the room available = false
-    }catch(error){
-      console.log("Booking Failed");
-      console.log(error);
 
+    // Get Room by id to check if available - provide booking
+    const room = await Room.findOne({ where: {id:roomId}})
+    if(!room){
+      return res.json({message:"No such room exists"})
     }
+    if(!room.isAvailable){
+      console.log(room)
+      return res.json({message:"This room is unavailable"})
+    }
+
+    // Room is available - create booking
+    const booking = await Booking.create({ roomId, fullName, nights, email });
+    // Make the room available = false  
+    await Room.update({
+      isAvailable: false
+    },{ 
+      where: { id: roomId } 
+    })
+
+    res.json({ message: 'Booking created successfully', booking });
     
-    res.json({ message: 'Booking created successfully', room });
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');

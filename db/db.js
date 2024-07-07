@@ -3,7 +3,7 @@ const { SqliteDialect } = require('@sequelize/sqlite3');
 
 const sequelize = new Sequelize({
   dialect: SqliteDialect,
-  storage: './db/hotel-chatbot.db',
+  storage: './db/resort-chatbot.db',
 });
 
 // Export the Sequelize instance
