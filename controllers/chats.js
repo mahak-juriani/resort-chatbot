@@ -1,7 +1,6 @@
 const Groq = require("groq-sdk");
 const uuid = require('uuid');
 const express = require('express');
-var app = express()
 
 const Chat = require('../db/models/chats');
 const Room = require('../db/models/rooms');
@@ -128,7 +127,7 @@ exports.chat = async (req,res) => {
     if(
         isBookingARoom && 
         isFullNameProvided &&
-         isNightsToStayProvided
+        isNightsToStayProvided
     ){
         console.log("book room and update via system role")
         // book room and update via system role
