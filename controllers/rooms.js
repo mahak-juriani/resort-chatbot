@@ -22,7 +22,7 @@ exports.createRoom = async (req, res) => {
 exports.getAllRooms = async (req, res) => {
   try {
     const rooms = await Room.findAll({
-      attributes: ['price', 'isAvailable']
+      attributes: ['id', 'price', 'isAvailable']
   });
     res.json(rooms);
   } catch (error) {

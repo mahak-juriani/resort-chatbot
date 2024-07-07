@@ -1,7 +1,6 @@
 const Groq = require("groq-sdk");
 const uuid = require('uuid');
 const express = require('express');
-var app = express()
 
 const Chat = require('../db/models/chats');
 const Room = require('../db/models/rooms');
@@ -16,8 +15,18 @@ const initialSystemMessage = {
 // Initiate agent so it acts as resort booking agent
 async function initiateChat(startMessage){
 
-    const rooms = await Room.findAll({where: {isAvailable: true},attributes:[['id','Room number'],'price'],raw:true})
-    startMessage.content+=`Rooms available - ${JSON.stringify(rooms)}`
+    const rooms = await Room.findAll({where: {isAvailable: true},attributes:[['id','roomNumber'],'price'],raw:true})
+    let roomDetails = ''
+    rooms.forEach((room)=>{
+        roomDetails += `Room Number - ${room.roomNumber}, price - ${room.price}`
+    })
+    console.log(rooms)
+
+    console.log(roomDetails)
+    if(!roomDetails){
+        roomDetails = 'None'
+    }
+    startMessage.content+=`Rooms available - ${roomDetails}`
 
     console.log(startMessage.content)
     return groq.chat.completions.create({
@@ -128,7 +137,7 @@ exports.chat = async (req,res) => {
     if(
         isBookingARoom && 
         isFullNameProvided &&
-         isNightsToStayProvided
+        isNightsToStayProvided
     ){
         console.log("book room and update via system role")
         // book room and update via system role
