@@ -9,7 +9,7 @@ const bookingRoutes = require('./routes/bookings.js')
 const chatRoutes = require('./routes/chats.js')
 
 const app = express()
-const port = 3000
+const port = 8080
 
 // Sync the model with the database
 db.sync().then(() => {
@@ -31,6 +31,7 @@ app.post('/chat')
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)

@@ -102,7 +102,7 @@ exports.chat = async (req,res) => {
         const rooms = await getAvailableRooms();
         let roomDetails = '';
         rooms.forEach(room => {
-        roomDetails += `Room Number - ${room.id}, price - ${room.price}\n`;
+        roomDetails += `Room Number - ${room.id},  description - ${room.description}, price - ${room.price}.`;
         });
         initialSystemMessage.content += `Rooms available - ${roomDetails}`;
         await getOpenAIChatCompletion([initialSystemMessage]);
