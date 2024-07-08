@@ -12,7 +12,7 @@ const { createBooking } = require("./bookings");
 
 const initialSystemMessage = {
     role: "system",
-    content: "Assume you're resort room management system. Once the room is booked it cannot be canceled. User will select by telling a room out of the rooms fetched. You provide pricing information. User confirms they want to proceed with booking. You get details such as fullName, email, nights, roomId. Full name, nights and roomId are mandatory before booking. One room booking at a time. The payment will be done in cash at the resort",
+    content: "Assume you're resort room management system. Once the room is booked it cannot be canceled. User will select by telling a room out of the rooms fetched. You provide pricing information. User confirms they want to proceed with booking. You get details such as fullName, email, nights, roomId. Full name, nights and roomId are mandatory before booking. One room booking at a time. The payment will be done in cash at the resort. Do not answer any questions not related to our resort booking. Assume you only know the details about the resort.",
 };
 
 exports.chat = async (req,res) => {
@@ -84,7 +84,7 @@ exports.chat = async (req,res) => {
         message += `Rooms available - ${JSON.stringify(rooms)}`;
         const roomDetailsByOpenAI = await getOpenAIChatCompletion([{ role: "system", content: message }]);
         // return roomDetails
-        return res.json({ message: 'Room Details', booking: roomDetailsByOpenAI });
+        return res.json({ message: 'Room Details', booking: roomDetailsByOpenAI, conversationId });
     }
 
     const isRoomNumberProvided = await getOpenAIChatCompletion([
@@ -100,7 +100,7 @@ exports.chat = async (req,res) => {
       const isNightsToStayProvided = await getOpenAIChatCompletion([
         ...messages,
         { role: "user", content: query },
-        { role: "system", content: "Are nights to stay provided by the user?, answer in yes or no, nothing else" }
+        { role: "system", content: "Are nights to stay for the booking provided by the user?, answer in yes or no, nothing else" }
       ]);
       const isBookingARoom = await getOpenAIChatCompletion([
         ...messages,
@@ -133,8 +133,13 @@ exports.chat = async (req,res) => {
         }
 
         if(requiredDetails){
+            const assistantResponse = await getOpenAIChatCompletion([
+                ...messages,
+                { role: "user", content: query },
+                { role: "system", content: `Please request the user to provide the following details - ${requiredDetails}.` }
+              ]);
             return res.json({
-                message: `Sorry i'm a bit confused, please provide these details - ${requiredDetails}`
+                message: `${assistantResponse.content} - ${requiredDetails}`
             });
         }else{
             const bookingResponse = await bookRoom(roomId, fullName, email, nights);
