@@ -14,7 +14,7 @@ const Chat = sequelize.define('Chat', {
         isIn: [['user','assistant','internal-user','internal-assistant', 'system']]
     }
   },
-  message: {
+  content: {
     type: DataTypes.STRING,
     allowNull: false,
   }

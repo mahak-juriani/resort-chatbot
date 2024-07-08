@@ -2,17 +2,12 @@
 const { getAvailableRooms, bookRoom } = require('./api'); // Import the functions
 const { getOpenAIChatCompletion } = require('./openai'); // Import OpenAI functions
 const uuid = require('uuid');
-const express = require('express');
 
 const Chat = require('../db/models/chats');
-const Room = require('../db/models/rooms');
-const { createBooking } = require("./bookings");
 
-// const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-const initialSystemMessage = {
+const initialSystemChat = {
     role: "system",
-    content: "Assume you're resort room management system. Once the room is booked it cannot be canceled. User will select by telling a room out of the rooms fetched. You provide pricing information. User confirms they want to proceed with booking. You get details such as fullName, email, nights, roomId. Full name, nights and roomId are mandatory before booking. One room booking at a time. The payment will be done in cash at the resort. Do not answer any questions not related to our resort booking. Assume you only know the details about the resort.",
+    content: "Assume you're resort room management system. Once the room is booked it cannot be canceled. User will select by telling a room out of the rooms fetched. You provide pricing information. User confirms they want to proceed with booking. You get details such as fullName, email, nights, room number. Full name, email, nights and room number are mandatory before booking. One room booking at a time. The payment will be done in cash at the resort. Do not answer any questions not related to our resort booking. Assume you only know the details about the resort.",
 };
 
 exports.chat = async (req,res) => {
@@ -36,6 +31,7 @@ exports.chat = async (req,res) => {
         if(!uuid.validate(conversationId)){
             return res.status(400).send({message: "Invalid conversationId provided"})
         }
+        
         // find all conversations with the conversationId createdAt ASC with role, update messages array accordingly 
 
         messages = await Chat.findAll({
@@ -43,7 +39,7 @@ exports.chat = async (req,res) => {
             order: [
                 ['createdAt', 'ASC'],
             ],
-            attributes: ['role', ['message','content']],
+            attributes: ['role', 'content'],
             raw: true,
         })
 
@@ -56,69 +52,128 @@ exports.chat = async (req,res) => {
 
     if(newConversation){
         // // initiate system
-        // await initiateChat(initialSystemMessage);
-        
-        // // create chat by system
-        // await Chat.create({conversationId, role:'system', message: initialSystemMessage.content})
-        // messages.unshift(initialSystemMessage)
-
-
         const rooms = await getAvailableRooms();
         let roomDetails = '';
         rooms.forEach(room => {
         roomDetails += `Room Number - ${room.id},  description - ${room.description}, price - ${room.price}.`;
         });
-        initialSystemMessage.content += `Rooms available - ${roomDetails}`;
-        await getOpenAIChatCompletion([initialSystemMessage]);
-        await Chat.create({ conversationId, role: 'system', message: initialSystemMessage.content });
-        messages.unshift(initialSystemMessage);
+        initialSystemChat.content += `Rooms available - ${roomDetails}`;
+        
+        initialSystemChat.conversationId = conversationId;
+
+        await Chat.create(initialSystemChat);
+
+        const initialResponse = await getOpenAIChatCompletion([initialSystemChat],conversationId);
+        
+        messages.unshift(initialSystemChat, initialResponse);
     }
 
+    // save userChat
+    const userChat = { conversationId, role: 'user', content: query }
+    messages.push(userChat)
+    await Chat.create(userChat);
+    const chatCompletion = await getOpenAIChatCompletion([...messages, userChat],conversationId);
+
+    // check whether user is asking for rooms
     const isAskingForRooms = await getOpenAIChatCompletion([
-        { role: "user", content: query },
+        ...messages,
         { role: "system", content: "Is the user asking for list of all rooms?, only say yes or no, nothing else" }
-    ]);
+    ],conversationId, false);
     if (isAskingForRooms.content.toLowerCase().includes("yes")) {
         const rooms = await getAvailableRooms();
+        let roomDetails = '';
         let message = '';
-        message += `Rooms available - ${JSON.stringify(rooms)}`;
-        const roomDetailsByOpenAI = await getOpenAIChatCompletion([{ role: "system", content: message }]);
+        rooms.forEach(room => {
+            roomDetails += `Room Number - ${room.id},  description - ${room.description}, price - ${room.price}.`;
+        });
+        message += `Rooms available - ${roomDetails}`;
+        const roomDetailsByOpenAI = await getOpenAIChatCompletion([{ role: "system", content: message }],conversationId);
         // return roomDetails
-        return res.json({ message: 'Room Details', booking: roomDetailsByOpenAI, conversationId });
+        return res.json({ message: roomDetailsByOpenAI.content, conversationId });
     }
 
     const isRoomNumberProvided = await getOpenAIChatCompletion([
         ...messages,
-        { role: "system", content: query },
-        { role: "user", content: "Do we know which room to book finally?, answer in yes or no, nothing else" }
-      ]);
+        { role: "system", content: "Do we know which room to book finally?, answer in yes or no, nothing else" }
+      ],conversationId, false);
       const isFullNameProvided = await getOpenAIChatCompletion([
         ...messages,
-        { role: "user", content: query },
         { role: "system", content: "Do we know full name of the user?, answer in yes or no, nothing else" }
-      ]);
+      ],conversationId, false);
       const isNightsToStayProvided = await getOpenAIChatCompletion([
         ...messages,
-        { role: "user", content: query },
         { role: "system", content: "Are nights to stay for the booking provided by the user?, answer in yes or no, nothing else" }
-      ]);
+      ],conversationId, false);
       const isBookingARoom = await getOpenAIChatCompletion([
         ...messages,
-        { role: "user", content: query },
         { role: "system", content: "Has the user confirmed a booking?, answer in yes or no, nothing else" }
-      ]);
+      ],conversationId, false);
 
 
     if (isBookingARoom.content.toLowerCase().includes("yes") && isFullNameProvided.content.toLowerCase().includes("yes") && isNightsToStayProvided.content.toLowerCase().includes("yes") && isRoomNumberProvided.content.toLowerCase().includes("yes")) {
-        const fullName = (await getOpenAIChatCompletion([...messages, { role: "system", content: query }, { role: "user", content: "Please respond with full name, no other text" }])).content;
-        const email = (await getOpenAIChatCompletion([...messages, { role: "system", content: query }, { role: "user", content: "Please respond with email, only email no other text" }])).content;
-        const roomId = (await getOpenAIChatCompletion([...messages, { role: "system", content: query }, { role: "user", content: "Please respond with room ID, numeric value nothing else" }])).content;
-        const nights = (await getOpenAIChatCompletion([...messages, { role: "system", content: query }, { role: "user", content: "Please respond with number of nights stay in numeric, nothing else" }])).content;
+        const fullName = (
+            await getOpenAIChatCompletion(
+                [
+                    ...messages, 
+                    { 
+                        role: "system", 
+                        content: "Please respond with full name, no other text" 
+                    }
+                ],
+                conversationId,
+                false
+            )
+        ).content;
+
+        const email = (
+            await getOpenAIChatCompletion(
+                [
+                    ...messages, 
+                    { 
+                        role: "system", 
+                        content: "Please respond with email, only email no other text" 
+                    }
+                ],
+                conversationId,
+                false
+            )
+        ).content;
+
+        let roomId = (
+            await getOpenAIChatCompletion(
+                [
+                    ...messages, 
+                    { 
+                        role: "system", 
+                        content: "Tell What is the room number  provided by user, no other text" 
+                    }
+                ],
+                conversationId,
+                false
+            )
+        ).content;
+
+        let nights = (
+            await getOpenAIChatCompletion(
+                [
+                    ...messages, 
+                    { 
+                        role: "system", 
+                        content: "Tell What is the number of nights provided by user, no other text" 
+                    }
+                ],
+                conversationId,
+                false
+            )
+        ).content;
     
         // validate data before booking, if incorrect ask for details
         let requiredDetails ='';
         if(!parseInt(nights)){
+            console.log('Night details issue', nights)
             requiredDetails += 'nights';
+        }else{
+            nights = parseInt(nights);
         }
 
         const rooms = await getAvailableRooms();
@@ -126,42 +181,44 @@ exports.chat = async (req,res) => {
         rooms.forEach(room =>{
             roomIds.push(room.id)
         })
-        // roomId validation
-        if(!roomIds.includes(roomId)){
-            requiredDetails && (requiredDetails += ',');
-            requiredDetails += 'room id'
+        
+        // convert roomId to number
+        if(parseInt(roomId)){
+            roomId = parseInt(roomId)
+        }else{
+            // if not convertible to number - pick first number from the string and then perform validation
+            roomId = parseInt(roomId.match(/\d+/)[0])
+            // roomId validation
+            if(!roomIds.includes(roomId)){
+                console.log('room details issue', roomId)
+                requiredDetails && (requiredDetails += ',');
+                requiredDetails += 'room number'
+            }
         }
+
+        // TODO: Add email validation
 
         if(requiredDetails){
             const assistantResponse = await getOpenAIChatCompletion([
                 ...messages,
-                { role: "user", content: query },
-                { role: "system", content: `Please request the user to provide the following details - ${requiredDetails}.` }
-              ]);
+                { role: "system", content: `Please request the user to provide the following details - ${requiredDetails}, and if more details required for booking` }
+              ],conversationId);
+              messages.push({conversationId,...assistantResponse});
             return res.json({
-                message: `${assistantResponse.content} - ${requiredDetails}`
+                message: `${assistantResponse.content}`
             });
         }else{
             const bookingResponse = await bookRoom(roomId, fullName, email, nights);
-    
-            await Booking.create({ roomId, fullName, nights, email });
-        
-            return res.json({ message: 'Booking created successfully', booking: bookingResponse });
+
+            return res.json(bookingResponse);
         }
         
     }
-
-    const chatCompletion = await getOpenAIChatCompletion([...messages, { role: "user", content: query }]);
-    const assistantResponse = chatCompletion.content || "";
-
-    await Chat.create({ conversationId, role: 'user', message: query });
-    await Chat.create({ conversationId, role: 'assistant', message: assistantResponse });
 
     chatCompletion.conversationId = conversationId;
 
     return res.json({
         message: chatCompletion.content,
-        role: chatCompletion.role,
         conversationId: chatCompletion.conversationId  
     });
 }

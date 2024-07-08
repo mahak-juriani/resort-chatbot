@@ -14,8 +14,8 @@ const bookRoom = async (roomId, fullName, email, nights) => {
   try {
     const response = await axios.post('https://bot9assignement.deno.dev/book', {
       roomId,
-      fullName,
-      email,
+      fullName: `${fullName}`,
+      email: `${email}`,
       nights
     });
     return response.data;

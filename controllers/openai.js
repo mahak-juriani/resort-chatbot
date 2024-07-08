@@ -6,18 +6,14 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-// async function main() {
-//   const params = {
-//     messages: [{ role: 'user', content: 'Say this is a test' }],
-//     model: 'gpt-3.5-turbo',
-//   };
-//   const chatCompletion = await openai.chat.completions.create(params);
-//   console.log(chatCompletion?.choices[0]?.message)
-// }
-
 // Function to get chat completion from OpenAI
-const getOpenAIChatCompletion = async (messages) => {
+const getOpenAIChatCompletion = async (messages, conversationId, toBeSaved=true) => {
     try {
+
+        // TODO: instead of taking complete context as messages array as input, pass the latest required messages only 
+        // save the messages passed from user (and system if required) in chats table
+        // In order to pass previous messages context to gpt - fetch all messages here everytime from the db Chat.findAll
+
         // Validate input messages
         if (!Array.isArray(messages) || messages.length === 0) {
             throw new Error('Invalid or empty messages array.');
@@ -25,11 +21,11 @@ const getOpenAIChatCompletion = async (messages) => {
 
         // Define parameters for chat completion request
         const params = {
-            messages: messages,
+            messages: messages.map(message=> ({role:message.role, content:message.content})),
             model: 'gpt-3.5-turbo',
         };
 
-        console.log(messages);
+        console.log(`${messages[messages.length - 1].role} - ${messages[messages.length - 1].content}`);
 
         // Call OpenAI API to fetch chat completion
         const chatCompletion = await openai.chat.completions.create(params);
@@ -42,7 +38,8 @@ const getOpenAIChatCompletion = async (messages) => {
 
           console.log(`${messages[messages.length-1].role} requested`,`${chat_response.role} responded with - ${chat_response.content}`)
           // TODO: add assistant response to db
-          // await Chat.create({ conversationId, role: 'assistant', message: chat_response });
+          if(toBeSaved)
+            await Chat.create({ conversationId, role: chat_response.role, content: chat_response.content });
 
           return chat_response;
       } else {

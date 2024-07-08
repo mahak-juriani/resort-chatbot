@@ -4,8 +4,6 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const db = require('./db/db.js')
-const roomRoutes = require('./routes/rooms.js')
-const bookingRoutes = require('./routes/bookings.js')
 const chatRoutes = require('./routes/chats.js')
 
 const app = express()
@@ -18,18 +16,13 @@ db.sync().then(() => {
 
 app.use(express.json());
 
-// Use room routes
-app.use(roomRoutes);
-// Use booking routes
-app.use(bookingRoutes);
-// Use booking routes
+// Use chat routes
 app.use(chatRoutes);
-
 
 app.post('/chat')
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
+  res.send('Server is up')
 })
 
 
